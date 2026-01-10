@@ -64,7 +64,6 @@
 
 import argparse
 import ray
-import matplotlib.pyplot as plt
 from ray.rllib.algorithms.ppo import PPOConfig
 import csv
 import os
