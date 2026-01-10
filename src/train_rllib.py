@@ -111,10 +111,7 @@ def main():
         PPOConfig()
         .environment(args.env)
         .framework("torch")
-        .rollouts(
-            num_rollout_workers=args.num_env_runners,
-            rollout_fragment_length=200
-        )
+        .env_runners(num_env_runners=args.num_env_runners)
         .training(
             train_batch_size=4000,
             sgd_minibatch_size=128,
