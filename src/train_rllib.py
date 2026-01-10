@@ -127,7 +127,7 @@ def main():
 
         for i in range(args.iterations):
             result = algo.train()
-            reward = result["episode_reward_mean"]
+            reward = result["env_runners"]["episode_return_mean"]
             rewards.append(reward)
             writer.writerow([i + 1, reward])
             print(f"Iter {i+1} | Reward {reward:.2f}")
