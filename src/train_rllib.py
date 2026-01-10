@@ -105,7 +105,7 @@ def main():
     args = parse_args()
 
     # Connect to Ray (local or cluster)
-    ray.init(address="auto", ignore_reinit_error=True)
+    ray.init(ignore_reinit_error=True)
 
     config = (
         PPOConfig()
