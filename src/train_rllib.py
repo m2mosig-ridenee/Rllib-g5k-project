@@ -95,6 +95,7 @@ def parse_args():
     parser.add_argument(
         "--use-gpu",
         action="store_true",
+        default=0,
         help="Enable GPU training if available"
     )
 
@@ -112,15 +113,7 @@ def main():
         .environment(args.env)
         .framework("torch")
         .env_runners(num_env_runners=args.num_env_runners)
-        .training(
-            train_batch_size=4000,
-            sgd_minibatch_size=128,
-            num_sgd_iter=10,
-            lr=3e-4,
-        )
-        .resources(
-            num_gpus=1 if args.use_gpu else 0
-        )
+        .resources(num_gpus=args.num_gpus)
     )
 
     algo = config.build()
