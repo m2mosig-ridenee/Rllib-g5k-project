@@ -67,6 +67,7 @@ import ray
 from ray.rllib.algorithms.ppo import PPOConfig
 import csv
 import os
+import time
 
 def parse_args():
     parser = argparse.ArgumentParser(description="RLlib PPO Training")
@@ -104,7 +105,7 @@ def parse_args():
 def main():
     args = parse_args()
 
-    # Connect to Ray (local or cluster)
+    # Connect to Ray
     ray.init(ignore_reinit_error=True)
 
     config = (
@@ -119,29 +120,23 @@ def main():
     algo = config.build()
     os.makedirs("results", exist_ok=True)
 
-    rewards = []
-
     with open("results/rewards.csv", "w", newline="") as f:
         writer = csv.writer(f)
-        writer.writerow(["iteration", "episode_reward_mean"])
+        writer.writerow(["iteration", "episode_reward_mean", "iteration_time_sec"])
 
         for i in range(args.iterations):
+            start = time.time()
             result = algo.train()
             reward = result["env_runners"]["episode_return_mean"]
-            rewards.append(reward)
-            writer.writerow([i + 1, reward])
-            print(f"Iter {i+1} | Reward {reward:.2f}")
+            duration = time.time() - start
 
-    # Plot results
-    # plt.figure(figsize=(8, 5))
-    # plt.plot(range(1, args.iterations + 1), rewards, marker="o")
-    # plt.xlabel("Training Iteration")
-    # plt.ylabel("Episode Reward Mean")
-    # plt.title(f"PPO on {args.env}")
-    # plt.grid(True)
-    # plt.tight_layout()
-    # plt.savefig("episode_reward_plot.png")
-    # plt.show()
+            writer.writerow([i + 1, reward, duration])
+            
+            print(
+            f"Iter {i+1} | "
+            f"Reward: {reward:.2f} | "
+            f"Time: {duration:.2f}s"
+            )
 
     algo.stop()
     ray.shutdown()
