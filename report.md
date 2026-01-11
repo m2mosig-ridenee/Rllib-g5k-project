@@ -174,7 +174,12 @@ This reduction in iteration duration demonstrates that distributed execution imp
 
 **Plot placeholders:**
 
+### CartPole-v1 — Single-node execution
+
 <img src="results/cartpole_1node.png" alt="CartPole 1 node Results" width="400"/>
+
+### CartPole-v1 — Two-node execution
+
 <img src="results/cartpole_2nodes.png" alt="CartPole 2 nodes Results" width="400"/>
 
 ### 4.2 Pendulum-v1
@@ -200,8 +205,14 @@ The speedup is more pronounced than for CartPole, which can be attributed to the
 
 **Plot placeholders:**
 
+### Pendulum-v1 — Single-node execution
+
 <img src="results/pendulum_1node.png" alt="Pendulum 1 node Results" width="400"/>
+
+### Pendulum-v1 — Two-node execution
+
 <img src="results/pendulum_2nodes.png" alt="Pendulum 2 nodes Results" width="400"/>
+
 
 ### 4.3 Discussion and summary
 
