@@ -26,13 +26,6 @@ We run the **same RL training workload** twice:
 
   We start a **Ray head** process on one node and a **Ray worker** process on the second node, then run RLlib, which automatically connects to the existing Ray cluster. RLlib distributes its **sampling actors** (EnvRunners) across both nodes.
 
-We focus on:
-
-- Using an existing RLlib algorithm (PPO)
-- Training on Gymnasium environments
-- Varying the number of parallel environment runners
-- Comparing execution on 1 node vs 2 nodes
-
 The main question addressed is:
 
 > **Does increasing parallelism and distributing sampling across multiple nodes reduce training time and improve execution performance?**
@@ -89,11 +82,11 @@ The script uses a headless plotting backend, making it compatible with remote cl
 The following settings are shared across all experiments:
 
 - **Algorithm:** PPO (RLlib)
-- **Framework:** PyTorch
 - **Training length:** Fixed number of iterations
 - **Metrics collected:**
   - Mean episode reward
   - Iteration execution time
+- **logging mechanism**
 
 The only intended differences between experiments are:
 
@@ -101,11 +94,17 @@ The only intended differences between experiments are:
 - Number of environment runners (`num_env_runners`)
 - Environment used (CartPole-v1, Pendulum-v1)
 
+Two Gymnasium environments were used:
+
+- **CartPole-v1** : A lightweight, discrete-control environment that converges quickly.
+
+- **Pendulum-v1** : A continuous-control environment with higher per-step computation cost.
+
 ### 3.2 Single-node execution
 
 - One Grid'5000 compute node is reserved
 - Ray is started locally on that node
-- All RLlib components (driver + environment runners) run on the same machine
+- All rollout workers run on the same machine
 
 **Example command:**
 
@@ -133,12 +132,6 @@ Then the RLlib training script is launched on the head node while connecting to 
 python train_rllib.py --env CartPole-v1 --num-env-runners 8 --iterations 20
 ```
 
-In this configuration:
-
-- Environment runners are distributed across both nodes
-- Increased parallelism is used to exploit additional CPU resources
-- The training code itself remains unchanged; only the execution context differs.
-
 ---
 
 ## 4) Results
@@ -157,11 +150,9 @@ In both configurations, PPO successfully learns the CartPole-v1 task.
 
 In the single-node run, the mean episode reward increases steadily from approximately 22 in the first iteration to values close to 490–500 after about 15–17 iterations.
 
-In the two-node run, learning follows a similar trajectory, sometimes reaching high rewards (above 450) slightly earlier, although with more visible fluctuations in later iterations.
+In the two-node run, learning follows a similar trajectory, sometimes reaching high rewards (above 450) earlier, although with more visible fluctuations in later iterations.
 
 These differences are expected and do not indicate better or worse learning quality. Reinforcement learning is stochastic, and increasing the number of environment runners changes the amount of data collected per iteration, which can affect short-term reward averages.
-
-Overall, both runs solve the task within the same number of iterations.
 
 ---
 
@@ -190,7 +181,7 @@ To evaluate execution performance, we compare the wall-clock time per training i
 | Single node | 1 | 4 | ~12.2 |
 | Two nodes | 2 | 8 | ~10.7 |
 
-Moving from one node to two nodes reduces the average iteration time by approximately 1.5 seconds, corresponding to an approximate 14% speedup.
+Moving from one node to two nodes reduces the average iteration time by approximately **1.5 seconds**, corresponding to an approximate **14% speedup**.
 
 ---
 
@@ -223,8 +214,6 @@ Pendulum-v1 is a continuous-control task with negative rewards and higher comput
 In the **single-node run**, the mean episode reward starts around **−1180** and fluctuates between approximately **−1150 and −950** throughout training. A gradual improvement trend is visible in the early and mid training stages, although rewards remain noisy and no clear convergence is reached within 50 iterations.
 
 In the **two-node run**, learning behavior is similar. Rewards start around **−1220** and fluctuate in a comparable range. As in the single-node case, training remains noisy, which is expected for PPO on continuous-control environments with limited training iterations.
-
-Overall, distributed execution does **not change the learning dynamics** of PPO on Pendulum-v1. Both configurations exhibit similar reward ranges and learning trends, confirming that parallel sampling preserves learning correctness.
 
 ---
 
@@ -278,18 +267,18 @@ This experiment highlights how **environment complexity directly impacts paralle
 <img src="results/pendulum_2nodes.png" alt="Pendulum 2 nodes Results" width="400"/>
 
 
-### 4.3 Discussion and summary
+<!-- ### 4.3 Discussion and summary
 
-Across both environments, distributed execution leads to reduced iteration execution time without negatively impacting learning behavior.
+Distributed execution reduces iteration execution time without affecting learning behavior.
 
-While the two-node configuration often reaches higher rewards in fewer training iterations, this effect is explained by a higher number of environment interactions per iteration rather than improved sample efficiency.
+Higher rewards may be reached in fewer iterations with two nodes due to increased parallel sampling, not improved sample efficiency.
 
-Performance gains remain modest for CartPole due to its lightweight nature, whereas Pendulum benefits more clearly from distributed sampling. These results confirm that RLlib effectively exploits parallel and distributed execution on Grid'5000, with benefits depending on environment complexity.
+Speedup is limited for CartPole because of its lightweight workload, while Pendulum benefits more clearly from distributed execution. Overall, these results show that RLlib effectively exploits parallelism on Grid’5000, with scalability depending on environment complexity. -->
 
 ---
 
 ## 5) Conclusion
 
-This work demonstrated the use of Ray RLlib for running reinforcement learning experiments on the Grid’5000 cluster. Using PPO on CartPole-v1 and Pendulum-v1, we compared single-node and two-node executions.
+This work demonstrated the use of Ray RLlib for distributed reinforcement learning on the Grid’5000 platform. Using PPO on CartPole-v1 and Pendulum-v1, we compared single-node and two-node executions.
 
-The results show that distributing environment sampling across multiple nodes reduces training iteration time, while preserving similar learning behavior and final performance. Performance gains are modest for lightweight environments and more noticeable for heavier ones, highlighting the practical trade-offs of distributed reinforcement learning.
+Distributed sampling reduces iteration time while preserving learning behavior. Speedup is limited for lightweight environments such as CartPole, but more significant for heavier environments like Pendulum, highlighting the trade-offs of parallel reinforcement learning.
