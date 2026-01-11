@@ -195,8 +195,6 @@ The observed speedup confirms that distributed rollout collection with RLlib is 
 
 This experiment illustrates an important principle of parallel computing: small workloads expose parallel overheads, which constrain achievable speedup even when more resources are available.
 
-**Plot placeholders:**
-
 ### CartPole-v1 — Single-node execution
 
 <img src="results/cartpole_1node.png" alt="CartPole 1 node Results" width="400"/>
@@ -254,9 +252,7 @@ Compared to CartPole-v1, Pendulum-v1 benefits more clearly from distributed exec
 - Rollout collection dominates communication overhead
 - Parallel sampling across multiple nodes reduces iteration time more effectively
 
-This experiment highlights how **environment complexity directly impacts parallel scalability**. While lightweight environments expose parallel overheads, heavier environments such as Pendulum-v1 allow distributed reinforcement learning to deliver more substantial performance gains.
-
-**Plot placeholders:**
+<!-- This experiment highlights how **environment complexity directly impacts parallel scalability**. While lightweight environments expose parallel overheads, heavier environments such as Pendulum-v1 allow distributed reinforcement learning to deliver more substantial performance gains. -->
 
 ### Pendulum-v1 — Single-node execution
 
