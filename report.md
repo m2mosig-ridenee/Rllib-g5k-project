@@ -24,7 +24,7 @@ We run the **same RL training workload** twice:
 
 - **2 nodes (distributed execution using a Ray cluster)**  
 
-  We start a **Ray head** process on one node and a **Ray worker** process on the second node, then run RLlib while connecting to the cluster. RLlib distributes its **sampling actors** (EnvRunners) across both nodes.
+  We start a **Ray head** process on one node and a **Ray worker** process on the second node, then run RLlib, which automatically connects to the existing Ray cluster. RLlib distributes its **sampling actors** (EnvRunners) across both nodes.
 
 We focus on:
 
@@ -149,28 +149,60 @@ For each environment, training was executed on a single node and on two nodes us
 
 At each training iteration, we recorded the mean episode reward and the iteration execution time.
 
-### 4.1 CartPole-v1
+### CartPole-v1 — Results Analysis (1 node vs 2 nodes)
 
 #### Learning behavior
 
-For both single-node and two-node configurations, the PPO agent successfully learns the CartPole task.
+In both configurations, PPO successfully learns the CartPole-v1 task.
 
-In the single-node setup, the mean episode reward increases steadily from low initial values and reaches near-optimal performance (reward close to 500) after approximately 15–20 training iterations.
+In the single-node run, the mean episode reward increases steadily from approximately 22 in the first iteration to values close to 490–500 after about 15–17 iterations.
 
-In the two-node setup, learning follows a similar trend; however, higher rewards are often reached in earlier iterations.
+In the two-node run, learning follows a similar trajectory, sometimes reaching high rewards (above 450) slightly earlier, although with more visible fluctuations in later iterations.
 
-This difference does not indicate improved learning quality per se, but rather results from increased sampling parallelism. With more environment runners, each training iteration processes a larger number of environment interactions, allowing the agent to observe more data per iteration.
+These differences are expected and do not indicate better or worse learning quality. Reinforcement learning is stochastic, and increasing the number of environment runners changes the amount of data collected per iteration, which can affect short-term reward averages.
 
-#### Performance comparison
+Overall, both runs solve the task within the same number of iterations.
 
-Iteration execution time is consistently lower in the two-node configuration.
+---
+
+#### Performance comparison (iteration time)
+
+To evaluate execution performance, we compare the wall-clock time per training iteration, which directly reflects how fast each configuration executes one PPO update.
+
+**Single node (4 env runners):**
+- Iteration times are relatively stable across training
+- Values mostly lie between ~12.0 s and ~12.6 s
+- One slightly higher value appears in the first iteration due to initialization overhead
+- **Average iteration time ≈ 12.2 s**
+
+**Two nodes (8 env runners):**
+- Iteration times are consistently lower than in the single-node case
+- Values mostly lie between ~10.4 s and ~10.8 s
+- Less sensitivity to initialization overhead
+- **Average iteration time ≈ 10.7 s**
+
+---
+
+#### Summary (CartPole-v1)
 
 | Setup | Nodes | num_env_runners | Avg. iteration time (s) |
-|-------|-------|-----------------|-------------------------|
-| Single node | 1 | 4 | ~12–13 |
-| Two nodes | 2 | 8 | ~10–11 |
+|------|------|-----------------|-------------------------|
+| Single node | 1 | 4 | ~12.2 |
+| Two nodes | 2 | 8 | ~10.7 |
 
-This reduction in iteration duration demonstrates that distributed execution improves training efficiency, even for a lightweight environment such as CartPole.
+Moving from one node to two nodes reduces the average iteration time by approximately 1.5 seconds, corresponding to an approximate 14% speedup.
+
+---
+
+#### Interpretation
+
+The observed speedup confirms that distributed rollout collection with RLlib is effective. However, the improvement remains modest because CartPole-v1 is a lightweight environment:
+
+- Each environment step is computationally cheap
+- Communication, synchronization, and scheduling overheads represent a significant fraction of execution time
+- As a result, scaling benefits are limited
+
+This experiment illustrates an important principle of parallel computing: small workloads expose parallel overheads, which constrain achievable speedup even when more resources are available.
 
 **Plot placeholders:**
 
@@ -182,26 +214,58 @@ This reduction in iteration duration demonstrates that distributed execution imp
 
 <img src="results/cartpole_2nodes.png" alt="CartPole 2 nodes Results" width="400"/>
 
-### 4.2 Pendulum-v1
+### Pendulum-v1 — Results Analysis (1 node vs 2 nodes)
 
 #### Learning behavior
 
-Pendulum-v1 is a continuous-control environment with negative rewards.
+Pendulum-v1 is a continuous-control task with negative rewards and higher computational cost per environment step than CartPole.
 
-In both configurations, rewards fluctuate between approximately –1150 and –950 throughout training. A slight improvement trend is observed, but no clear convergence is reached within the selected number of training iterations.
+In the **single-node run**, the mean episode reward starts around **−1180** and fluctuates between approximately **−1150 and −950** throughout training. A gradual improvement trend is visible in the early and mid training stages, although rewards remain noisy and no clear convergence is reached within 50 iterations.
 
-Learning behavior is similar between the single-node and two-node executions, indicating that distributed sampling does not alter the underlying learning dynamics of PPO for this task.
+In the **two-node run**, learning behavior is similar. Rewards start around **−1220** and fluctuate in a comparable range. As in the single-node case, training remains noisy, which is expected for PPO on continuous-control environments with limited training iterations.
 
-#### Performance comparison
+Overall, distributed execution does **not change the learning dynamics** of PPO on Pendulum-v1. Both configurations exhibit similar reward ranges and learning trends, confirming that parallel sampling preserves learning correctness.
 
-Iteration execution time shows a clear improvement when using two nodes.
+---
+
+#### Performance comparison (iteration time)
+
+We now compare the **wall-clock time per training iteration**, which directly reflects execution performance.
+
+**Single node (4 env runners):**
+- Iteration times are stable across training
+- Typical values lie between **~14.0 s and ~14.4 s**
+- Minor variations are observed due to stochastic environment interactions
+- **Average iteration time ≈ 14.2 s**
+
+**Two nodes (8 env runners):**
+- Iteration times are consistently lower than in the single-node configuration
+- Typical values lie between **~10.7 s and ~11.0 s**
+- Reduced sensitivity to per-iteration variability
+- **Average iteration time ≈ 10.9 s**
+
+---
+
+#### Summary (Pendulum-v1)
 
 | Setup | Nodes | num_env_runners | Avg. iteration time (s) |
-|-------|-------|-----------------|-------------------------|
-| Single node | 1 | 4 | ~14–15 |
-| Two nodes | 2 | 8 | ~10–11 |
+|------|------|-----------------|-------------------------|
+| Single node | 1 | 4 | ~14.2 |
+| Two nodes | 2 | 8 | ~10.9 |
 
-The speedup is more pronounced than for CartPole, which can be attributed to the higher computational cost of the Pendulum environment.
+Moving from one node to two nodes reduces the average iteration time by approximately **3.3 seconds**, corresponding to an approximate **23% speedup**.
+
+---
+
+#### Interpretation
+
+Compared to CartPole-v1, Pendulum-v1 benefits more clearly from distributed execution:
+
+- Each environment step is more computationally expensive
+- Rollout collection dominates communication overhead
+- Parallel sampling across multiple nodes reduces iteration time more effectively
+
+This experiment highlights how **environment complexity directly impacts parallel scalability**. While lightweight environments expose parallel overheads, heavier environments such as Pendulum-v1 allow distributed reinforcement learning to deliver more substantial performance gains.
 
 **Plot placeholders:**
 
