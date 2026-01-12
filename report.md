@@ -209,7 +209,7 @@ This experiment illustrates an important principle of parallel computing: small 
 
 Pendulum is a continuous-control task; PPO learning is typically noisier and may require more timesteps/tuning than CartPole.
 
-In the **single-node run**, the mean episode reward starts around **−1180** and fluctuates between approximately **−1150 and −950** throughout training. A gradual improvement trend is visible in the early and mid training stages, although rewards remain noisy and no consistent convergence is reached within 50 iterations.
+In the **single-node run**, the mean episode reward starts around **−1180** and fluctuates between approximately **−1150 and −950** throughout training. Rewards remain noisy and roughly stable overall ( between −1150 and −950), with occasional better spikes (best ≈ −936), but no consistent improvement or convergence is observed within 50 iterations.
 
 In the **two-node run**, there is a small improvement on average (later iterations are slightly less negative), but training remains noisy and does not clearly converge within 50 iterations.
 
@@ -248,8 +248,8 @@ Moving from one node to two nodes reduces the average iteration time by approxim
 
 Compared to CartPole-v1, Pendulum-v1 benefits more clearly from distributed execution:
 
-- Each environment step is more computationally expensive
-- Rollout collection dominates communication overhead
+- Rollout collection is heavier per iteration
+- Overheads are less dominant than in CartPole
 - Parallel sampling across multiple nodes reduces iteration time more effectively
 
 This experiment highlights how **environment complexity directly impacts parallel scalability**. While lightweight environments expose parallel overheads, heavier environments such as Pendulum-v1 allow distributed reinforcement learning to deliver more substantial performance gains.
