@@ -1,8 +1,8 @@
 ray[rllib]
 gymnasium
-pydantic
-gymnasium[box2d]
 torch
+pydantic
 
+# gymnasium[box2d]
 # sudo-g5k apt-get update
 # sudo-g5k apt-get install -y swig build-essential python3-dev
